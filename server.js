@@ -1,4 +1,4 @@
-const app=require("express");
+const app=require("express")();
 const PORT = process.env.port || 3000;
 app.get("",(req,res)=>{
     res.send("This is SForceEditor API");
