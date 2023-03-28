@@ -6,7 +6,7 @@ const {
   getAccessToken,
   getUserDetails,
 } = require("./salesforceAuth");
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
   res.send("Hey!");
@@ -34,5 +34,5 @@ app.get("/userData", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+  console.log(`Listening on port ${PORT}`); 
 });
