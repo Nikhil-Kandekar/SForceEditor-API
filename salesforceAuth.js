@@ -16,7 +16,7 @@ const redirectToSalesforceLogin = (req, res) => {
   res.redirect(oauth2.getAuthorizationUrl({}));
 };
 
-const getAccessToken = async (req, res) => {
+const getAccessToken = async (req, _res) => {
   const oauth2 = new jsforce.OAuth2({
     clientId: CUSTOMER_KEY,
     clientSecret: CUSTOMER_SECRET,
@@ -27,6 +27,7 @@ const getAccessToken = async (req, res) => {
   console.log("AuthTok: " + conn.accessToken, "InstUrl: " + conn.instanceUrl); // access token via oauth2
   ACCESS_TOKEN = conn.accessToken;
   INSTANCE_URL = conn.instanceUrl;
+  return { ACCESS_TOKEN, INSTANCE_URL };
 };
 
 const getUserDetails = async (req, res) => {

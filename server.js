@@ -8,9 +8,11 @@ const {
 } = require("./salesforceAuth");
 const PORT = process.env.PORT || 5000;
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Hey!");
 });
+
+// ------------- Google Auth ------------------
 
 app.get("/getSheetData", async (_req, res) => {
   const data = await getSheetData();
@@ -18,18 +20,19 @@ app.get("/getSheetData", async (_req, res) => {
   res.send(data);
 });
 
+// ------------- Salesforce Auth ------------------
+
 app.get("/salesforceAuth", async (req, res) => {
   await redirectToSalesforceLogin(req, res);
 });
 
 app.get("/getAccessToken", async (req, res) => {
-  getAccessToken(req, res);
-  res.send("Authentication successful!");
+  const response = await getAccessToken(req, res);
+  res.json(response);
 });
 
 app.get("/userData", async (req, res) => {
   const deets = await getUserDetails(req, res);
-  console.log(deets);
   res.json(deets);
 });
 
