@@ -6,6 +6,7 @@ const REDIRECT_URI = process.env.REDIRECT_URI;
 
 let ACCESS_TOKEN = undefined;
 let INSTANCE_URL = undefined;
+let REVERT_URL = undefined;
 
 const redirectToSalesforceLogin = (req, res) => {
   const oauth2 = new jsforce.OAuth2({
@@ -27,9 +28,10 @@ const getAccessToken = async (req, res) => {
   console.log("AuthTok: " + conn.accessToken, "InstUrl: " + conn.instanceUrl); // access token via oauth2
   ACCESS_TOKEN = conn.accessToken;
   INSTANCE_URL = conn.instanceUrl;
+  if (REVERT_URL) res.redirect(REVERT_URL);
 };
 
-const getUserDetails = async (req, res) => {
+const getUserDetails = async (req, res, revertUrl) => {
   if (INSTANCE_URL && ACCESS_TOKEN) {
     const conn2 = new jsforce.Connection({
       instanceUrl: INSTANCE_URL,
@@ -37,6 +39,7 @@ const getUserDetails = async (req, res) => {
     });
     try {
       const res = await conn2.identity();
+      REVERT_URL = undefined;
       return {
         "user ID: ": res.user_id,
         "organization ID: ": res.organization_id,
@@ -48,7 +51,32 @@ const getUserDetails = async (req, res) => {
     }
   } else {
     redirectToSalesforceLogin(req, res);
+    REVERT_URL = revertUrl;
   }
 };
 
-module.exports = { redirectToSalesforceLogin, getAccessToken, getUserDetails };
+const queryVersionData = async (req, res) => {
+  if (INSTANCE_URL && ACCESS_TOKEN) {
+    const conn2 = new jsforce.Connection({
+      instanceUrl: INSTANCE_URL,
+      accessToken: ACCESS_TOKEN,
+    });
+    try {
+      const res = await conn2.query(
+        "Select id,VersionData, Title, Description, FileType,ContentUrl, PathOnClient, ContentSize, TagCsv, Owner.Name, VersionNumber from ContentVersion"
+      );
+      return res;
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    redirectToSalesforceLogin(req, res);
+  }
+};
+
+module.exports = {
+  redirectToSalesforceLogin,
+  getAccessToken,
+  getUserDetails,
+  queryVersionData,
+};

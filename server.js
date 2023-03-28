@@ -5,6 +5,7 @@ const {
   redirectToSalesforceLogin,
   getAccessToken,
   getUserDetails,
+  queryVersionData,
 } = require("./salesforceAuth");
 const PORT = process.env.PORT || 5000;
 
@@ -28,7 +29,13 @@ app.get("/getAccessToken", async (req, res) => {
 });
 
 app.get("/userData", async (req, res) => {
-  const deets = await getUserDetails(req, res);
+  const deets = await getUserDetails(req, res, "/userData");
+  // console.log(deets);
+  res.json(deets);
+});
+
+app.get("/getData", async (req, res) => {
+  const deets = await queryVersionData(req, res);
   console.log(deets);
   res.json(deets);
 });
