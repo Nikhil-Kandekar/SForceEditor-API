@@ -29,7 +29,7 @@ app.get("/getAccessToken", async (req, res) => {
 });
 
 app.get("/userData", async (req, res) => {
-  const deets = await getUserDetails(req, res, "/userData");
+  const deets = await getUserDetails(req, res);
   // console.log(deets);
   res.json(deets);
 });

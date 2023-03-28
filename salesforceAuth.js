@@ -6,7 +6,6 @@ const REDIRECT_URI = process.env.REDIRECT_URI;
 
 let ACCESS_TOKEN = undefined;
 let INSTANCE_URL = undefined;
-let REVERT_URL = undefined;
 
 const redirectToSalesforceLogin = (req, res) => {
   const oauth2 = new jsforce.OAuth2({
@@ -28,10 +27,9 @@ const getAccessToken = async (req, res) => {
   console.log("AuthTok: " + conn.accessToken, "InstUrl: " + conn.instanceUrl); // access token via oauth2
   ACCESS_TOKEN = conn.accessToken;
   INSTANCE_URL = conn.instanceUrl;
-  if (REVERT_URL) res.redirect(REVERT_URL);
 };
 
-const getUserDetails = async (req, res, revertUrl) => {
+const getUserDetails = async (req, res) => {
   if (INSTANCE_URL && ACCESS_TOKEN) {
     const conn2 = new jsforce.Connection({
       instanceUrl: INSTANCE_URL,
@@ -39,7 +37,6 @@ const getUserDetails = async (req, res, revertUrl) => {
     });
     try {
       const res = await conn2.identity();
-      REVERT_URL = undefined;
       return {
         "user ID: ": res.user_id,
         "organization ID: ": res.organization_id,
@@ -51,7 +48,6 @@ const getUserDetails = async (req, res, revertUrl) => {
     }
   } else {
     redirectToSalesforceLogin(req, res);
-    REVERT_URL = revertUrl;
   }
 };
 
