@@ -51,4 +51,28 @@ const getUserDetails = async (req, res) => {
   }
 };
 
-module.exports = { redirectToSalesforceLogin, getAccessToken, getUserDetails };
+const queryVersionData = async (req, res) => {
+  if (INSTANCE_URL && ACCESS_TOKEN) {
+    const conn2 = new jsforce.Connection({
+      instanceUrl: INSTANCE_URL,
+      accessToken: ACCESS_TOKEN,
+    });
+    try {
+      const res = await conn2.query(
+        "Select id,VersionData, Title, Description, FileType,ContentUrl, PathOnClient, ContentSize, TagCsv, Owner.Name, VersionNumber from ContentVersion"
+      );
+      return res;
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    redirectToSalesforceLogin(req, res);
+  }
+};
+
+module.exports = {
+  redirectToSalesforceLogin,
+  getAccessToken,
+  getUserDetails,
+  queryVersionData,
+};
