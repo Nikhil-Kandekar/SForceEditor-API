@@ -4,6 +4,8 @@ const process = require("process");
 const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
 const sheets = google.sheets("v4");
+const docs = google.docs("v1");
+const util = require("util");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = [
@@ -112,4 +114,15 @@ async function createSheet() {
   }
 }
 
-module.exports = { createSheet, getSheetData };
+async function getDoc() {
+  const authClient = await authorize();
+  const res = await docs.documents.get({
+    documentId: "1sVWhnmUcYxF0yE6r2h_M2y9jN1Myx4UFnzieZkHA0YM",
+    auth: authClient,
+  });
+  console.log(util.inspect(res.data, false, 17));
+  console.log(res.data);
+  return res.data;
+}
+
+module.exports = { createSheet, getSheetData, getDoc };

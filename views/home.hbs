@@ -1,0 +1,8 @@
+<h3>Data</h3>
+  {{#each deets.records as | record |}}
+    <p>{{record.PathOnClient}}</p>
+    <p>{{record.VersionData}}</p>
+    <a href="{{record.VersionData}}">Verion data</a>
+    <hr>
+  {{/each }}
+
