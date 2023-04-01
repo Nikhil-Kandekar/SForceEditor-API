@@ -4,13 +4,13 @@ const CUSTOMER_KEY = process.env.CUSTOMER_KEY;
 const CUSTOMER_SECRET = process.env.CUSTOMER_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 
-const redirectToSalesforceLogin = (req, _res) => {
+const redirectToSalesforceLogin = (req, res) => {
   const oauth2 = new jsforce.OAuth2({
     clientId: CUSTOMER_KEY,
     clientSecret: CUSTOMER_SECRET,
     redirectUri: `${req.protocol}://${req.get("host")}/${REDIRECT_URI}`,
   });
-  return oauth2.getAuthorizationUrl({});
+  res.redirect(oauth2.getAuthorizationUrl({}));
 };
 
 const getAccessToken = async (req, res) => {
@@ -22,7 +22,7 @@ const getAccessToken = async (req, res) => {
     });
     const conn = new jsforce.Connection({ oauth2: oauth2 });
     await conn.authorize(req.query.code);
-    console.log("AuthTok: " + conn.accessToken, "InstUrl: " + conn.instanceUrl); // access token via oauth2
+    // console.log("AuthTok: " + conn.accessToken, "InstUrl: " + conn.instanceUrl); // access token via oauth2
     ACCESS_TOKEN = conn.accessToken;
     INSTANCE_URL = conn.instanceUrl;
     return { ACCESS_TOKEN, INSTANCE_URL };
@@ -65,12 +65,9 @@ const queryVersionData = async (req, res, fileId) => {
     });
     try {
       const query = fileId
-        ? `SELECT Id, VersionData, Title, FileType, ContentUrl, PathOnClient, ContentSize, TagCsv, VersionNumber FROM ContentVersion WHERE Id = '${fileId}'`
-        : "SELECT Id, VersionData, Title, FileType, ContentUrl, PathOnClient, ContentSize, TagCsv, VersionNumber FROM ContentVersion WHERE Id IN (SELECT LatestPublishedVersionId FROM ContentDocument)";
-      const res = await conn2.query(
-        // "SELECT VersionData, Title, FileType, ContentDocumentId FROM ContentVersion"
-        query
-      );
+        ? `SELECT Id, VersionData, Title, FileType, ContentUrl, PathOnClient, ContentSize, TagCsv, VersionNumber FROM ContentVersion WHERE ContentDocumentId = '${fileId}' AND Id IN (SELECT LatestPublishedVersionId FROM ContentDocument)`
+        : "SELECT Id, VersionData, Title, FileType, ContentUrl, PathOnClient, ContentSize, TagCsv, VersionNumber FROM ContentVersion"; // WHERE Id IN (SELECT LatestPublishedVersionId FROM ContentDocument)";
+      const res = await conn2.query(query);
       return res;
     } catch (error) {
       console.error(error);

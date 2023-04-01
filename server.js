@@ -1,8 +1,7 @@
 require("dotenv").config();
-const path = require("path");
 const express = require("express");
 const app = express();
-const { getSheetData } = require("./googleAuth");
+const { getSheetData, uploadFileToDrive } = require("./googleAuth");
 const {
   redirectToSalesforceLogin,
   getAccessToken,
@@ -12,7 +11,17 @@ const {
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { engine } = require("express-handlebars");
+const {
+  getMimeTypeForExt,
+  saveFile,
+  toDataURL_node,
+  urltoFile,
+} = require("./helper");
+const PizZip = require("pizzip");
 const PORT = process.env.PORT || 5000;
+const fs = require("fs");
+const Docxtemplater = require("docxtemplater");
+const { read, utils } = require("./sheetjs/xlsx");
 
 app.use(cookieParser());
 app.use(
@@ -39,13 +48,20 @@ app.get("/getSheetData", async (_req, res) => {
 // ------------- Salesforce Auth ------------------
 
 app.get("/salesforceAuth", async (req, res) => {
-  const redirectUri = await redirectToSalesforceLogin(req, res);
-  res.cookie("Revert Uri", req.query.revertUri).json({ redirectUri });
+  req.query && req.query.fileId ? res.cookie("fileId", req.query.fileId) : null;
+  res.cookie("Revert Uri", req.query.revertUri);
+  await redirectToSalesforceLogin(req, res);
 });
 
 app.get("/getAccessToken", async (req, res) => {
   const response = await getAccessToken(req, res);
-  let revert = req.cookies["Revert Uri"] ?? "/getData"; // "/getData?fileId=0685g00000DcR3wAAF";
+  let revert;
+  if (req.cookies["fileId"] !== undefined) {
+    revert = "/getData?fileId=" + req.cookies["fileId"];
+  } else {
+    revert = "/getData";
+  }
+
   res.clearCookie("Revert Uri");
   res.cookie("Instance Url", response.INSTANCE_URL);
   res.cookie("Access Token", response.ACCESS_TOKEN).redirect(revert);
@@ -59,9 +75,11 @@ app.get("/userData", async (req, res) => {
 app.get("/getData", async (req, res) => {
   let fileId = req.query.fileId; // /getData?fileId=xxxx
   const deets = await queryVersionData(req, res, fileId);
-  console.log(deets);
+  // console.log(deets);
   // get file data
-  let urlStr = deets.records[1].VersionData;
+  let urlStr = deets.records[0].VersionData;
+  let name = deets.records[0].PathOnClient;
+  let ext = name.split(".").reverse()[0]; // txt or doc or xls ...
   try {
     const resp = await fetch(req.cookies["Instance Url"] + urlStr, {
       method: "GET",
@@ -69,17 +87,67 @@ app.get("/getData", async (req, res) => {
         Authorization: "Bearer " + req.cookies["Access Token"],
       },
     });
-    const d = await resp.blob();
-    const l = await d.text();
-    console.log(l);
-    res.send(l);
+
+    let output;
+
+    if (ext === "doc") {
+      const dataBlob = await resp.blob();
+      const arrBuf = await dataBlob.arrayBuffer();
+      // const dataBlobURL = URL.createObjectURL(dataBlob);
+
+      // use the buffer as needed
+      let buffer = Buffer.from(arrBuf, "binary");
+      const pzip = new PizZip();
+      const zip = await pzip.load(buffer);
+      const doc = new Docxtemplater();
+      doc.loadZip(zip);
+      output = doc.getZip().generate({ type: "nodebuffer" });
+      // write output to file or send as response
+      console.log("Output: " + output);
+    } else if (ext === "txt") {
+      output = await dataBlob.text();
+      output = "<p>" + output;
+      output = output.split("\n").join("<br />");
+      output = output.split("\r\n").join("<br />");
+      output += "</p>";
+    } else if (ext === "xlsx" || ext === "xls") {
+      const f = await resp.arrayBuffer();
+      const wb = read(f);
+      const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      console.log(data);
+      let headers = Object.keys(data[0]);
+      let html = '<figure class="table"><table><tbody>';
+      html += "<thead><tr>";
+      headers.forEach((header) => {
+        html += `<th>${header}</th>`;
+      });
+      html += "</tr></thead>";
+      for (const row of data) {
+        html += "<tr>";
+        for (const header of headers) {
+          html += `<td>${row[header]}</td>`;
+        }
+        html += "</tr>";
+      }
+      html += "</tbody></table></figure>";
+      output = html;
+    }
+    // const data = {};
+    // data.name = name;
+    // data.mimeType = getMimeTypeForExt(ext);
+    // data.body = output; // is this valid??
+    // data.originalMimeType = dataBlob.type;
+
+    // await uploadFileToDrive(data);
+
+    res.render("home", {
+      deets,
+      data: output,
+    });
   } catch (error) {
     console.log(error);
+    res.json({ error: error.message });
   }
-
-  // res.render("home", {
-  //   deets,
-  // });
 });
 
 app.listen(PORT, () => {

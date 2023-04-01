@@ -3,6 +3,7 @@ const path = require("path");
 const process = require("process");
 const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
+const drive = google.drive("v3");
 const sheets = google.sheets("v4");
 const docs = google.docs("v1");
 const util = require("util");
@@ -12,6 +13,7 @@ const SCOPES = [
   "https://www.googleapis.com/auth/drive",
   "https://www.googleapis.com/auth/drive.file",
   "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/documents",
 ];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
@@ -114,6 +116,35 @@ async function createSheet() {
   }
 }
 
+async function createGoogleDoc(data) {
+  const authClient = await authorize();
+  console.log(authClient);
+  const request = {
+    resource: {
+      // TODO: Add desired properties to the request body.
+    },
+
+    auth: authClient,
+  };
+
+  try {
+    const response = (
+      await docs.documents.create({
+        auth: authClient,
+        requestBody: {
+          body: data.body,
+        },
+      })
+    ).data;
+    // TODO: Change code below to process the `response` object:
+    console.log(JSON.stringify(response, null, 2));
+    console.log(response.spreadsheetId);
+    console.log(response.spreadsheetUrl);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 async function getDoc() {
   const authClient = await authorize();
   const res = await docs.documents.get({
@@ -125,4 +156,35 @@ async function getDoc() {
   return res.data;
 }
 
-module.exports = { createSheet, getSheetData, getDoc };
+async function uploadFileToDrive(data) {
+  try {
+    let buffer = Buffer.from(data.body, "base64");
+    let deco = buffer.toString("utf8");
+    const authClient = await authorize();
+    const response = await drive.files.create({
+      requestBody: {
+        name: data.name,
+        // mimeType: data.mimeType,
+      },
+      media: {
+        mimeType: data.mimeType,
+        body: deco, // not sure .....
+      },
+      auth: authClient,
+    });
+    // report the response from the request
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    //report the error message
+    console.log(error.message);
+  }
+}
+
+module.exports = {
+  createSheet,
+  getSheetData,
+  getDoc,
+  uploadFileToDrive,
+  createGoogleDoc,
+};
