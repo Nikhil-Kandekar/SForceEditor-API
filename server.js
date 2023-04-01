@@ -34,7 +34,7 @@ app.set("view engine", ".hbs");
 app.set("views", "./views");
 
 app.get("/", (_req, res) => {
-  res.render("home", { title: true });
+  res.render("handsontable");
 });
 
 // ------------- Google Auth ------------------
@@ -75,7 +75,6 @@ app.get("/userData", async (req, res) => {
 app.get("/getData", async (req, res) => {
   let fileId = req.query.fileId; // /getData?fileId=xxxx
   const deets = await queryVersionData(req, res, fileId);
-  // console.log(deets);
   // get file data
   let urlStr = deets.records[0].VersionData;
   let name = deets.records[0].PathOnClient;
@@ -89,6 +88,8 @@ app.get("/getData", async (req, res) => {
     });
 
     let output;
+    let renderTemplate;
+    let renderOptions;
 
     if (ext === "doc") {
       const dataBlob = await resp.blob();
@@ -104,33 +105,38 @@ app.get("/getData", async (req, res) => {
       output = doc.getZip().generate({ type: "nodebuffer" });
       // write output to file or send as response
       console.log("Output: " + output);
+      renderTemplate = "home";
+      renderOptions = { data: output };
     } else if (ext === "txt") {
+      const dataBlob = await resp.blob();
       output = await dataBlob.text();
       output = "<p>" + output;
       output = output.split("\n").join("<br />");
       output = output.split("\r\n").join("<br />");
       output += "</p>";
+      renderTemplate = "home";
+      renderOptions = { data: output };
     } else if (ext === "xlsx" || ext === "xls") {
       const f = await resp.arrayBuffer();
       const wb = read(f);
       const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
       console.log(data);
       let headers = Object.keys(data[0]);
-      let html = '<figure class="table"><table><tbody>';
-      html += "<thead><tr>";
-      headers.forEach((header) => {
-        html += `<th>${header}</th>`;
-      });
-      html += "</tr></thead>";
-      for (const row of data) {
-        html += "<tr>";
-        for (const header of headers) {
-          html += `<td>${row[header]}</td>`;
-        }
-        html += "</tr>";
-      }
-      html += "</tbody></table></figure>";
-      output = html;
+      let script = `<script>
+        const container = document.querySelector('#table');
+        const hot = new Handsontable(container, {
+          data: ${JSON.stringify(data)},
+          rowHeaders: true,
+          colHeaders: ${JSON.stringify(headers)},
+          dropdownMenu: true,
+          multiColumnSorting: true,
+          filters: true,
+          height: 'auto',
+          licenseKey: 'non-commercial-and-evaluation' // for non-commercial use only
+        });
+      </script>`;
+      renderTemplate = "handsontable";
+      renderOptions = { script };
     }
     // const data = {};
     // data.name = name;
@@ -140,10 +146,7 @@ app.get("/getData", async (req, res) => {
 
     // await uploadFileToDrive(data);
 
-    res.render("home", {
-      deets,
-      data: output,
-    });
+    res.render(renderTemplate, renderOptions);
   } catch (error) {
     console.log(error);
     res.json({ error: error.message });
