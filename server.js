@@ -1,28 +1,30 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
-const { getSheetData, uploadFileToDrive } = require("./googleAuth");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
+// const { getSheetData, uploadFileToDrive } = require("./googleAuth");
 const {
   redirectToSalesforceLogin,
   getAccessToken,
   getUserDetails,
   queryVersionData,
+  insertVersionData,
 } = require("./salesforceAuth");
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const { engine } = require("express-handlebars");
 const {
+  processExcel,
+  processText,
+  htmlToText,
+  processDoc,
   getMimeTypeForExt,
-  saveFile,
-  toDataURL_node,
-  urltoFile,
 } = require("./helper");
-const PizZip = require("pizzip");
+const { utils, write } = require("./sheetjs/xlsx");
 const PORT = process.env.PORT || 5000;
-const fs = require("fs");
-const Docxtemplater = require("docxtemplater");
-const { read, utils } = require("./sheetjs/xlsx");
 
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(
   cors({
@@ -34,7 +36,7 @@ app.set("view engine", ".hbs");
 app.set("views", "./views");
 
 app.get("/", (_req, res) => {
-  res.render("handsontable");
+  res.send("Hey");
 });
 
 // ------------- Google Auth ------------------
@@ -78,6 +80,7 @@ app.get("/getData", async (req, res) => {
   // get file data
   let urlStr = deets.records[0].VersionData;
   let name = deets.records[0].PathOnClient;
+  let contentDocumentId = deets.records[0].ContentDocumentId;
   let ext = name.split(".").reverse()[0]; // txt or doc or xls ...
   try {
     const resp = await fetch(req.cookies["Instance Url"] + urlStr, {
@@ -87,70 +90,85 @@ app.get("/getData", async (req, res) => {
       },
     });
 
-    let output;
     let renderTemplate;
     let renderOptions;
 
-    if (ext === "doc") {
-      const dataBlob = await resp.blob();
-      const arrBuf = await dataBlob.arrayBuffer();
-      // const dataBlobURL = URL.createObjectURL(dataBlob);
-
-      // use the buffer as needed
-      let buffer = Buffer.from(arrBuf, "binary");
-      const pzip = new PizZip();
-      const zip = await pzip.load(buffer);
-      const doc = new Docxtemplater();
-      doc.loadZip(zip);
-      output = doc.getZip().generate({ type: "nodebuffer" });
-      // write output to file or send as response
-      console.log("Output: " + output);
-      renderTemplate = "home";
-      renderOptions = { data: output };
+    if (ext === "docx") {
+      let { template, options } = await processDoc(
+        resp,
+        ext,
+        name,
+        contentDocumentId
+      );
+      renderTemplate = template;
+      renderOptions = options;
     } else if (ext === "txt") {
-      const dataBlob = await resp.blob();
-      output = await dataBlob.text();
-      output = "<p>" + output;
-      output = output.split("\n").join("<br />");
-      output = output.split("\r\n").join("<br />");
-      output += "</p>";
-      renderTemplate = "home";
-      renderOptions = { data: output };
+      let { template, options } = await processText(
+        resp,
+        name,
+        ext,
+        contentDocumentId
+      );
+      renderTemplate = template;
+      renderOptions = options;
     } else if (ext === "xlsx" || ext === "xls") {
-      const f = await resp.arrayBuffer();
-      const wb = read(f);
-      const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-      console.log(data);
-      let headers = Object.keys(data[0]);
-      let script = `<script>
-        const container = document.querySelector('#table');
-        const hot = new Handsontable(container, {
-          data: ${JSON.stringify(data)},
-          rowHeaders: true,
-          colHeaders: ${JSON.stringify(headers)},
-          dropdownMenu: true,
-          multiColumnSorting: true,
-          filters: true,
-          height: 'auto',
-          licenseKey: 'non-commercial-and-evaluation' // for non-commercial use only
-        });
-      </script>`;
-      renderTemplate = "handsontable";
-      renderOptions = { script };
+      let { template, options } = await processExcel(
+        resp,
+        name,
+        ext,
+        contentDocumentId
+      );
+      renderTemplate = template;
+      renderOptions = options;
+    } else {
+      res.render("error", {
+        message: `Files of type .${ext} are not supported.`,
+      });
+      return;
     }
-    // const data = {};
-    // data.name = name;
-    // data.mimeType = getMimeTypeForExt(ext);
-    // data.body = output; // is this valid??
-    // data.originalMimeType = dataBlob.type;
-
-    // await uploadFileToDrive(data);
-
     res.render(renderTemplate, renderOptions);
   } catch (error) {
     console.log(error);
     res.json({ error: error.message });
   }
+});
+
+app.post("/saveSheetData", async (req, res) => {
+  let aoo = req.body.data;
+  let { ext, name, conDocId } = req.body;
+  const ws = utils.json_to_sheet(aoo);
+  const wb = utils.book_new();
+  utils.book_append_sheet(wb, ws, "Sheet1");
+  const buf = write(wb, { type: "buffer", bookType: ext });
+  console.log(buf);
+  await insertVersionData(req, res, buf, name, conDocId);
+  res.send(req.body);
+});
+
+app.post("/saveTextData", async (req, res) => {
+  let data = req.body.data;
+  let textData = htmlToText(data);
+  let { ext, name, conDocId } = req.body;
+  await insertVersionData(req, res, textData, name, conDocId);
+  res.send(req.body);
+});
+
+app.post("/saveDocData", async (req, res) => {
+  let data = req.body.data;
+  let preHtml =
+    "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML To Doc</title></head><body>";
+  let postHtml = "</body></html>";
+  data = preHtml + data + postHtml;
+  let { ext, name, conDocId } = req.body;
+  let mimeType = getMimeTypeForExt(ext);
+  let blob = new Blob(["\ufeff", data], {
+    type: mimeType,
+  });
+  let arrBuf = await blob.arrayBuffer();
+  let buf = Buffer.from(arrBuf);
+
+  await insertVersionData(req, res, buf, name, conDocId);
+  res.send(req.body);
 });
 
 app.listen(PORT, () => {
