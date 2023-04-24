@@ -1,6 +1,11 @@
 const fs = require("fs").promises;
 const mammoth = require("mammoth");
 const { read, utils } = require("./sheetjs/xlsx");
+const pdfcrowd = require("pdfcrowd");
+const pdfConClient = new pdfcrowd.PdfToHtmlClient(
+  "demo",
+  "ce544b6ea52a5621fb9d55f8b542d14d"
+);
 
 const getMimeTypeForExt = (ext) => {
   if (ext === "csv") {
@@ -57,8 +62,14 @@ async function processExcel(resp, name, ext, contentDocumentId) {
   const f = await resp.arrayBuffer();
   const wb = read(f);
   const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-  console.log(data);
   let headers = Object.keys(data[0]);
+  let tempMap = {};
+  headers.forEach((ele) => {
+    tempMap[ele] = ele;
+  });
+  if (JSON.stringify(tempMap) !== JSON.stringify(data[0]))
+    data.unshift(tempMap);
+  console.log(data);
 
   let script = `<script>
     let cols = ${JSON.stringify(headers.map((h) => ({ data: h })))}
@@ -66,9 +77,39 @@ async function processExcel(resp, name, ext, contentDocumentId) {
     let data = ${JSON.stringify(data)}
     let ext = '${ext}'
     let name = '${name}'
-    let contentDocumentId = '${contentDocumentId}'
+    let mimeType = '${getMimeTypeForExt(ext)}'
+    let conDocId = '${contentDocumentId}'
   </script>`;
-  return { template: "handsontable", options: { script } };
+
+  return { template: "luckysheet", options: { script } }; // return { template: "handontable", options: { script } };
+}
+
+async function processExcelBlob(resp, name, ext, contentDocumentId) {
+  const f = await resp.arrayBuffer();
+  const base64Blob = Buffer.from(new Uint8Array(f)).toString("base64");
+  console.log("f => ", f);
+
+  const wb = read(f);
+  const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  let headers = Object.keys(data[0]);
+  let tempMap = {};
+  headers.forEach((ele) => {
+    tempMap[ele] = ele;
+  });
+  data.unshift(tempMap);
+
+  let script = `<script>
+    let cols = ${JSON.stringify(headers.map((h) => ({ data: h })))}
+    let headers = ${JSON.stringify(headers)}
+    let data = ${JSON.stringify(data)}
+    let ext = '${ext}'
+    let mimeType = '${getMimeTypeForExt(ext)}'
+    let name = '${name}'
+    let conDocId = '${contentDocumentId}'
+    let base64Blob = '${base64Blob}'
+  </script>`;
+
+  return { template: "luckysheetCsv", options: { script } };
 }
 
 async function processText(resp, name, ext, contentDocumentId) {
@@ -82,6 +123,8 @@ async function processText(resp, name, ext, contentDocumentId) {
   let script = `<script>
     const save = document.querySelector('#save');
     save.addEventListener('click', () => {
+      save.disabled = true;
+      document.querySelector('#status').innerText = 'Hang tight! Saving data to salesforce...';
       fetch('/saveTextData', {
         method: 'POST',
         //mode: 'no-cors',
@@ -98,9 +141,11 @@ async function processText(resp, name, ext, contentDocumentId) {
       .then(response => {
           document.querySelector('#status').innerText = 'Data saved';
           console.log('The POST request is only used here for the demo purposes');
+          save.disabled = false;
       })
       .catch((err) => {
           document.querySelector('#status').innerText = err.message;
+          save.disabled = false;
       })
     })
   </script>`;
@@ -121,7 +166,6 @@ function htmlToText(data) {
 async function processDoc(resp, ext, name, contentDocumentId) {
   const dataBlob = await resp.blob();
   const arrBuf = await dataBlob.arrayBuffer();
-
   let buffer = Buffer.from(arrBuf);
 
   const result = await mammoth.convertToHtml(buffer);
@@ -130,6 +174,8 @@ async function processDoc(resp, ext, name, contentDocumentId) {
   let script = `<script>
     const save = document.querySelector('#save');
     save.addEventListener('click', () => {
+      document.querySelector('#status').innerText = 'Hang tight! Saving data to salesforce...';
+      save.disabled = true;
       fetch('/saveDocData', {
         method: 'POST',
         //mode: 'no-cors',
@@ -145,16 +191,58 @@ async function processDoc(resp, ext, name, contentDocumentId) {
       })
       .then(response => {
           document.querySelector('#status').innerText = 'Data saved';
+          save.disabled = false;
           console.log('The POST request is only used here for the demo purposes');
       })
       .catch((err) => {
           document.querySelector('#status').innerText = err.message;
+          save.disabled = false;
       })
     })
   </script>`;
   let options = { data: result.value, script };
 
   return { template, options };
+}
+
+async function processPdf(resp, ext, name, contentDocumentId) {
+  const dataBlob = await resp.blob();
+  const arrBuf = await dataBlob.arrayBuffer();
+  let pdfBuffer = Buffer.from(arrBuf);
+  // console.log("pdf buf -> " + pdfBuffer);
+  pdfConClient.convertRawDataToFile(
+    pdfBuffer,
+    "data.html",
+    async function (err, fileName) {
+      if (err) return console.error("Pdfcrowd Error: " + err);
+      console.log("Success: the file was created " + fileName);
+    }
+  );
+  let data = await fs.readFile("data.html", { encoding: "utf8" });
+  // let startIdx = data.indexOf("<body>");
+  // let endIdx = data.indexOf("</body>");
+  // data = data.slice(startIdx, endIdx);
+  // data = data.replace("<body>", "");
+  // data = data.replace("</body>", "");
+  // startIdx = data.indexOf("<img");
+  // endIdx = data.indexOf('CC">');
+  // let imgEle = data.slice(startIdx, endIdx);
+  // data = data.replace('CC">', "");
+  // data = data.replace(imgEle, "");
+  // data = data.replace("<div", "<p");
+  // data = data.replace("</div", "</p");
+  console.log("html -> " + data);
+  let template = "pdfDisplay";
+  let options = { data, script: "" };
+  return { template, options };
+}
+
+function isNumeric(str) {
+  if (typeof str != "string") return false; // we only process strings!
+  return (
+    !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(parseFloat(str))
+  ); // ...and ensure strings of whitespace fail
 }
 
 module.exports = {
@@ -166,4 +254,7 @@ module.exports = {
   processText,
   htmlToText,
   processDoc,
+  processPdf,
+  isNumeric,
+  processExcelBlob,
 };
