@@ -1,0 +1,79 @@
+{{!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script> 
+<script src="https://jsuites.net/v4/jsuites.js"></script>
+<link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
+<link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" /> --}}
+
+<script src="https://jspreadsheet.com/v7/jspreadsheet.js"></script>
+<link rel="stylesheet" href="https://jspreadsheet.com/v7/jspreadsheet.css" type="text/css" />
+<script src="https://jsuites.net/v4/jsuites.js"></script>
+<link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
+ 
+{{!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script> --}}
+<script src="https://bossanova.uk/jspreadsheet/v3/xlsx.js"></script>
+<script src="jspreadsheet.js"></script>
+
+<script lang="javascript" src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<button id="save">Save</button>
+<p id="status"></p>
+
+<div id="spreadsheet"></div>
+{{{script}}}
+
+<script>
+  console.log(base64Blob);
+  let mainSheet;
+  jspreadsheet.fromBase64Blob(base64Blob, function(result) {
+    if (! result.length) {
+        console.error('Jspreadsheet: Something went wrong.');
+    } else {
+        for (var i = 0; i < result.length; i++) {
+          console.log(result[i]);
+          var options = result[i];
+          options.tabs = true;
+          mainSheet = jspreadsheet(document.getElementById('spreadsheet'), options);
+        }
+    }
+  });
+
+  let save = document.getElementById('save');
+  save.addEventListener('click', async () => {
+    let blob = mainSheet.getBlob();
+    let base64Blob = await blobToBase64(blob);
+    console.log('base64Blob: ', base64Blob);
+
+    save.disabled = true;
+    document.querySelector('#status').innerText = 'Hang tight! Saving data to salesforce...';
+
+    fetch('/saveSheetData', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        base64Blob,
+        ext, 
+        name, 
+        conDocId, 
+      }),
+    })
+    .then(response => {
+        document.querySelector('#status').innerText = 'Data saved';
+        save.disabled = false;
+    })
+    .catch((err) => {
+        document.querySelector('#status').innerText = err.message;
+        save.disabled = false;
+    })
+
+  })
+
+  function blobToBase64(blob) {
+  return new Promise((resolve, _) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+  }
+</script>
