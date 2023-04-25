@@ -16,22 +16,26 @@
 <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
 <button id="save">Save</button>
+<button id="download">Download</button>
 <p id="status"></p>
 
 <div id="spreadsheet"></div>
 {{{script}}}
 
 <script>
-  console.log(base64Blob);
+  //console.log(base64Blob);
   let mainSheet;
   jspreadsheet.fromBase64Blob(base64Blob, function(result) {
     if (! result.length) {
         console.error('Jspreadsheet: Something went wrong.');
     } else {
         for (var i = 0; i < result.length; i++) {
-          console.log(result[i]);
+          console.log(`res ${i}: `, result[i]);
           var options = result[i];
           options.tabs = true;
+          for(let key of Object.keys(options.style)) {
+            options.style[key] = options.style[key].replace('undefined', '');
+          }
           mainSheet = jspreadsheet(document.getElementById('spreadsheet'), options);
         }
     }
@@ -39,7 +43,7 @@
 
   let save = document.getElementById('save');
   save.addEventListener('click', async () => {
-    let blob = mainSheet.getBlob();
+    let blob = mainSheet.getBlob(undefined, mimeType);
     let base64Blob = await blobToBase64(blob);
     console.log('base64Blob: ', base64Blob);
 
@@ -49,7 +53,7 @@
     fetch('/saveSheetData', {
       method: 'POST',
       headers: {
-          'Content-Type': 'application/json'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         base64Blob,
@@ -69,11 +73,17 @@
 
   })
 
+  let download = document.getElementById('download');
+  download.addEventListener('click', async () => {
+    mainSheet.download();
+  });
+
   function blobToBase64(blob) {
   return new Promise((resolve, _) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
     reader.readAsDataURL(blob);
+    //reader.readAsText(blob);
   });
   }
 </script>

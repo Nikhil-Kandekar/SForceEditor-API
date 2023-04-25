@@ -22,7 +22,7 @@ const {
   htmlToText,
   processDoc,
   getMimeTypeForExt,
-  processExcelBlob,
+  //processExcelBlob,
 } = require("./helper");
 const { utils, write } = require("./sheetjs/xlsx");
 const PORT = process.env.PORT || 5000;
@@ -116,17 +116,9 @@ app.get("/getData", async (req, res) => {
       );
       renderTemplate = template;
       renderOptions = options;
-    } /*else if (ext === "xlsx") {
+    } else if (ext === "xlsx" || ext === "xls" || ext === "csv") {
+      //                                processExcelBlob
       let { template, options } = await processExcel(
-        resp,
-        name,
-        ext,
-        contentDocumentId
-      );
-      renderTemplate = template;
-      renderOptions = options;
-    }*/ else if (ext === "xlsx" || ext === "xls" || ext === "csv") {
-      let { template, options } = await processExcelBlob(
         resp,
         name,
         ext,
@@ -175,7 +167,7 @@ app.post("/saveSheetData", express.raw({ type: "*/*" }), async (req, res) => {
   console.log("base64Blob: ", base64Blob);
   let buf = Buffer.from(base64Blob, "base64");
 
-  //await insertVersionData(req, res, buf, name, conDocId);
+  // await insertVersionData(req, res, buf, name, conDocId);
   res.send({ message: "Success" });
 });
 

@@ -13471,7 +13471,7 @@ if (!jSuites && typeof require === "function") {
         // Download element
         var blob = new Blob(["\uFEFF" + data], {
           // type: "text/csv;charset=utf-8;",
-          type: mimeType,
+          type: mimeType + ";charset=utf-8",
         });
 
         return blob;
@@ -16425,11 +16425,10 @@ if (!jSuites && typeof require === "function") {
       var arraybuffer = _base64ToArrayBuffer(base64Blob);
       var data = new Uint8Array(arraybuffer);
 
-      // var uintArray = Base64Binary.decode(base64Blob);
-      // var byteArray = Base64Binary.decodeArrayBuffer(base64Blob);
-      console.log("data", arraybuffer);
-      var wb = XLSX.read(base64Blob, {
-        type: "base64",
+      var uintArray = Base64Binary.decode(base64Blob);
+      var byteArray = Base64Binary.decodeArrayBuffer(base64Blob);
+      var wb = XLSX.read(data, {
+        type: "array",
         cellFormula: true,
         cellStyles: true,
       });

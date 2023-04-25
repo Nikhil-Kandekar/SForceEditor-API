@@ -150,7 +150,7 @@ async function processText(resp, name, ext, contentDocumentId) {
     })
   </script>`;
 
-  return { template: "home", options: { data, script } };
+  return { template: "textEditor", options: { data, script } };
 }
 
 function htmlToText(data) {
@@ -170,7 +170,7 @@ async function processDoc(resp, ext, name, contentDocumentId) {
 
   const result = await mammoth.convertToHtml(buffer);
   console.log(result);
-  let template = "home";
+  let template = "docxEditor";
   let script = `<script>
     const save = document.querySelector('#save');
     save.addEventListener('click', () => {
