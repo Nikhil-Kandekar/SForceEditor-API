@@ -1,8 +1,7 @@
-<button id="save">Save</button>
-<p id="status"></p>
 <div id="editor">
     {{{data}}}
 </div>
+{{{script}}}
 <script>
     let _editor;
     CKEDITOR.ClassicEditor.create(document.getElementById("editor"), {
@@ -141,7 +140,73 @@
       ]
   })
     .then(editor => {_editor = editor})
-    .catch(err => console.error(err));
+    .catch(err => {console.error(err); setAlert(err.message)});
+
+    const save = document.querySelector('#save-custom');
+    const saveAndClose = document.querySelector('#saveAndClose-custom');
+    save.addEventListener('click', () => {
+      const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
+      save.disabled = true;
+      saveAndClose.disabled = true;
+      fetch('/saveDocData', {
+        method: 'POST',
+        //mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            data: _editor.getData(), 
+            ext: ext, 
+            name: name, 
+            conDocId: conDocId 
+        })
+      })
+      .then(response => {
+          closeHang.click();
+          setAlert('Data saved', 'success');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+      })
+      .catch((err) => {
+          closeHang.click();
+          setAlert(err.message, 'danger');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+      })
+    })
+
+    saveAndClose.addEventListener('click', () => {
+      const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
+      save.disabled = true;
+      saveAndClose.disabled = true;
+      fetch('/saveDocData', {
+        method: 'POST',
+        //mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            data: _editor.getData(), 
+            ext: ext, 
+            name: name, 
+            conDocId: conDocId 
+        })
+      })
+      .then(response => {
+          closeHang.click();
+          setAlert('Data saved', 'success');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+          setTimeout(() => {
+            window.close();
+          }, 500)
+      })
+      .catch((err) => {
+          closeHang.click();
+          setAlert(err.message, 'danger');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+      })
+    })
 </script>
-{{{script}}}
 

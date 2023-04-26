@@ -41,15 +41,7 @@ app.set("views", "./views");
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (_req, res) => {
-  res.send("Hey");
-});
-
-// ------------- Google Auth ------------------
-
-app.get("/getSheetData", async (_req, res) => {
-  const data = await getSheetData();
-  console.log(data);
-  res.send(data);
+  res.send("Welcome to SForce Editor!");
 });
 
 // ------------- Salesforce Auth ------------------
@@ -175,8 +167,13 @@ app.post("/saveTextData", async (req, res) => {
   let data = req.body.data;
   let textData = htmlToText(data);
   let { ext, name, conDocId } = req.body;
-  await insertVersionData(req, res, textData, name, conDocId);
-  res.send(req.body);
+  try {
+    await insertVersionData(req, res, textData, name, conDocId);
+    res.send(req.body);
+  } catch (error) {
+    console.log(err);
+    res.status(404).send({ error: err.message });
+  }
 });
 
 app.post("/saveDocData", async (req, res) => {
@@ -192,9 +189,13 @@ app.post("/saveDocData", async (req, res) => {
   });
   let arrBuf = await blob.arrayBuffer();
   let buf = Buffer.from(arrBuf);
-
-  await insertVersionData(req, res, buf, name, conDocId);
-  res.send(req.body);
+  try {
+    await insertVersionData(req, res, buf, name, conDocId);
+    res.send(req.body);
+  } catch (err) {
+    console.log(err);
+    res.status(404).send({ error: err.message });
+  }
 });
 
 app.listen(PORT, () => {

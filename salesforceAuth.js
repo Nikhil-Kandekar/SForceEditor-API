@@ -85,18 +85,14 @@ const insertVersionData = async (req, res, buf, fileName, conDocId) => {
       instanceUrl: INSTANCE_URL,
       accessToken: ACCESS_TOKEN,
     });
-    try {
-      const bufBase64 = Buffer.from(buf).toString("base64");
-      const ret = await conn2.sobject("ContentVersion").create({
-        PathOnClient: fileName,
-        Title: fileName.split(".")[0],
-        VersionData: bufBase64,
-        ContentDocumentId: conDocId,
-      });
-      console.log("Created record id : " + ret.id);
-    } catch (error) {
-      console.error(error);
-    }
+    const bufBase64 = Buffer.from(buf).toString("base64");
+    const ret = await conn2.sobject("ContentVersion").create({
+      PathOnClient: fileName,
+      Title: fileName.split(".")[0],
+      VersionData: bufBase64,
+      ContentDocumentId: conDocId,
+    });
+    console.log("Created record id : " + ret.id);
   } else {
     redirectToSalesforceLogin(req, res);
   }
