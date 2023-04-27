@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/super-build/ckeditor.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" />
+
+    <link rel="stylesheet" href="https://bootswatch.com/5/flatly/bootstrap.min.css" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="styles.css">
+
+    <title>SForce Editor</title>
+    <script>
+      function setAlert(msg, variant) {
+        const container = document.querySelector('.container');
+        container.innerHTML = `
+        <div class="alert alert-${variant} alert-dismissible m-2" role="alert" style="position: absolute; z-index: 10; align-self: center">
+          <button type="button" id="btn-close" class="btn-close" data-bs-dismiss="alert"></button>
+          ${msg}
+        </div>
+        ` + container.innerHTML
+        const closeAlert = document.querySelector('#btn-close');
+        const timeout = setTimeout(() => {closeAlert.click()}, 10000);
+        closeAlert.addEventListener('click', () => {
+          console.log('Clicked!');
+          document.querySelector('.alert').remove();
+          clearTimeout(timeout);
+        })
+        return closeAlert;
+      }
+
+      function toggleNavbarMenu() {
+        const navBarMenu = document.querySelector('#navbarMenu');
+        navBarMenu.classList.contains('collapse') ? navBarMenu.classList.remove('collapse') : navBarMenu.classList.add('collapse');
+      }
+    </script>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#"><em>SForce <strong>Editor</strong></em></a>
+        <button class="navbar-toggler" type="button"- onclick="toggleNavbarMenu()" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse open" id="navbarMenu">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item ">
+              <a class="nav-link " href="#">Features</a>
+            </li>
+            <li class="nav-item ">
+              <a class="nav-link " href="#">About</a>
+            </li>
+          </ul>
+          <form class="d-flex">
+            <button id="save-custom" class="m-2 btn btn-success" type="button">Save</button>
+            <button id="saveAndClose-custom" class="m-2 btn btn-info" type="button">Save And Close</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+    <div class="container">
+      <div class="my-2 text-center">
+        {{!-- <button id="al" onclick="setAlert('wertyuiop', 'success')">al</button> --}}
+        {{{body}}}
+      </div>
+    </div>
+  </body>
+  <footer class="text-center footer mt-5">
+  <div class="container p-4">
+    
+      <div class="row  text-md-start mt-5">
+        
+          <!--Logo Start-->
+        <div class="col-md-4 ">
+          <h4 class="pb-3"><em>SForce <strong>Editor</strong></em></h4>
+          
+          <p class="copy-right"> Copyright © 2023 Cognizant Technology Solutions. All Rights Reserved.</p>
+        </div>
+        <!--Logo end-->
+        
+          <!--Solutions Start-->
+        <div class="col-md-3">
+         <h5 class="pb-3">Solutions </h5>
+          <ul class="list-style ps-0 ">
+            <li class="pb-3">Patent Licensing and Acquisition</li>
+            <li class="pb-3">Portfolio Management and Monetization</li>
+            <li class="pb-3">R&D / Market Intelligence</li>
+            <li class="pb-3">M&A Opportunity and Due Diligence</li>
+            <li class="pb-3">Litigation Risk Assessment and Strategy</li>
+            <li class="pb-3">
+              Patent Prosecution
+            </li>
+          </ul>
+        </div>
+        <!--Solutions end-->
+        
+          
+          <!--Quick links Start-->
+        <div class="col-md-3 ">
+         <h5 class="pb-3"> Quick links </h5>
+          <ul class="list-style ps-0">
+            <li class="pb-3">Cognizant Empower</li>
+            <li class="pb-3">Cognizant Insight</li>
+            <li class="pb-3">Cognizant Corporation</li>
+          </ul>
+        </div>
+        <!--QUick links end-->
+       
+        <!--Other Start-->
+        <div class="col-md-2 ">
+         <h5 class="pb-3"> Other </h5>
+          <ul class="list-style ps-0">
+            <li class="pb-3">Privacy Policy</li>
+            <li class="pb-3">Terms of Use</li>
+            <li class="pb-3">Features</li>
+            <li class="pb-3">Success Stories</li>
+            <li class="pb-3">Contact Us</li>
+          </ul>
+        </div>
+        <!--Other end-->
+      </div>
+    
+  </div>
+</footer>
+</html>

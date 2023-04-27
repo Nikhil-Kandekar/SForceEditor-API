@@ -1,0 +1,93 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.13.5/jszip.js"></script>
+<script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script> 
+<script src="https://jsuites.net/v4/jsuites.js"></script>
+<link rel="stylesheet" href="https://jsuites.net/v4/jsuites.css" type="text/css" />
+<link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
+<script src="jspreadsheet.js"></script>
+
+<div id="spreadsheet" style="max-width: 90vw; max-height: 82vh; overflow: scroll;"></div>
+{{{script}}}
+
+<script>
+  let mainSheet = jspreadsheet(document.getElementById('spreadsheet'), {data: data, minDimensions: [20,18]});
+
+  const save = document.querySelector('#save-custom');
+  const saveAndClose = document.querySelector('#saveAndClose-custom');
+
+  save.addEventListener('click', async () => {
+    let blob = mainSheet.getBlob(undefined, mimeType);
+    let base64Blob = await blobToBase64(blob);
+
+    const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
+    save.disabled = true;
+    saveAndClose.disabled = true;
+    fetch('/saveXlsx', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        data: mainSheet.getData(),
+        ext, 
+        name, 
+        conDocId, 
+      }),
+    })
+    .then(response => {
+        closeHang.click();
+          setAlert('Data saved', 'success');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+    })
+    .catch((err) => {
+        closeHang.click();
+        setAlert(err.message, 'danger');
+        save.disabled = false;
+        saveAndClose.disabled = false;
+    })
+  })
+
+  saveAndClose.addEventListener('click', async () => {
+    let blob = mainSheet.getBlob(undefined, mimeType);
+    let base64Blob = await blobToBase64(blob);
+
+    const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
+    save.disabled = true;
+    saveAndClose.disabled = true;
+    fetch('/saveXlsx', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        data: mainSheet.getData(),
+        ext, 
+        name, 
+        conDocId, 
+      }),
+    })
+    .then(response => {
+        closeHang.click();
+        setAlert('Data saved', 'success');
+        save.disabled = false;
+        saveAndClose.disabled = false;
+        setTimeout(() => {
+            window.close();
+          }, 500)
+    })
+    .catch((err) => {
+        closeHang.click();
+        setAlert(err.message, 'danger');
+        save.disabled = false;
+        saveAndClose.disabled = false;
+    })
+  })
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, _) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  }
+</script>
