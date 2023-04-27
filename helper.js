@@ -115,10 +115,6 @@ async function processExcelBlob(resp, name, ext, contentDocumentId) {
 async function processText(resp, name, ext, contentDocumentId) {
   const dataBlob = await resp.blob();
   let data = await dataBlob.text();
-  data = "<p>" + data;
-  data = data.split("\n").join("<br/>");
-  data = data.split("\r\n").join("<br />");
-  data += "</p>";
 
   let script = `<script>
     let ext = '${ext}'
