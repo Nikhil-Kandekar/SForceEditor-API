@@ -11,7 +11,7 @@
 <script>
   let mainSheet = jspreadsheet(document.getElementById('spreadsheet'), {data: data, minDimensions: [20,18]});
 
-  const save = document.getElementById('save-custom');
+  const save = document.querySelector('#save-custom');
   const saveAndClose = document.querySelector('#saveAndClose-custom');
 
   save.addEventListener('click', async () => {

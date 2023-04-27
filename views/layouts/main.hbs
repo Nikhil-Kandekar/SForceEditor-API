@@ -16,6 +16,30 @@
     <link rel="stylesheet" href="styles.css">
 
     <title>SForce Editor</title>
+    <script>
+      function setAlert(msg, variant) {
+        const container = document.querySelector('.container');
+        container.innerHTML = `
+        <div class="alert alert-${variant} alert-dismissible m-2" role="alert" style="position: absolute; z-index: 10; align-self: center">
+          <button type="button" id="btn-close" class="btn-close" data-bs-dismiss="alert"></button>
+          ${msg}
+        </div>
+        ` + container.innerHTML
+        const closeAlert = document.querySelector('#btn-close');
+        const timeout = setTimeout(() => {closeAlert.click()}, 10000);
+        closeAlert.addEventListener('click', () => {
+          console.log('Clicked!');
+          document.querySelector('.alert').remove();
+          clearTimeout(timeout);
+        })
+        return closeAlert;
+      }
+
+      function toggleNavbarMenu() {
+        const navBarMenu = document.querySelector('#navbarMenu');
+        navBarMenu.classList.contains('collapse') ? navBarMenu.classList.remove('collapse') : navBarMenu.classList.add('collapse');
+      }
+    </script>
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light">
@@ -46,30 +70,6 @@
         {{{body}}}
       </div>
     </div>
-    <script>
-      function setAlert (msg, variant) {
-        const container = document.querySelector('.container');
-        container.innerHTML = `
-        <div class="alert alert-${variant} alert-dismissible m-2" role="alert" style="position: absolute; z-index: 10; align-self: center">
-          <button type="button" id="btn-close" class="btn-close" data-bs-dismiss="alert"></button>
-          ${msg}
-        </div>
-        ` + container.innerHTML
-        const closeAlert = document.querySelector('#btn-close');
-        const timeout = setTimeout(() => {closeAlert.click()}, 10000);
-        closeAlert.addEventListener('click', () => {
-          console.log('Clicked!');
-          document.querySelector('.alert').remove();
-          clearTimeout(timeout);
-        })
-        return closeAlert;
-      }
-
-      function toggleNavbarMenu() {
-        const navBarMenu = document.querySelector('#navbarMenu');
-        navBarMenu.classList.contains('collapse') ? navBarMenu.classList.remove('collapse') : navBarMenu.classList.add('collapse');
-      }
-    </script>
   </body>
   <footer class="text-center footer mt-5">
   <div class="container p-4">
