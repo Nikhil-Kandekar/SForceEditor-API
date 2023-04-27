@@ -1,5 +1,5 @@
 <div id="editor" style="box-shadow: 10px 5px 5px red;">
-    {{{data}}}
+    {{data}}
 </div>
 {{{script}}}
 <script>
@@ -190,6 +190,7 @@
           setAlert('Data saved', 'success');
           save.disabled = false;
           saveAndClose.disabled = false;
+          window.close();
       })
       .catch((err) => {
           closeHang.click();
