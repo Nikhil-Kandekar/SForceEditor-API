@@ -65,7 +65,7 @@ async function processExcel(resp, name, ext, contentDocumentId) {
   let headers = Object.keys(data[0]);
   let tempMap = {};
   headers.forEach((ele) => {
-    tempMap[ele] = ele;
+    if (!ele.startsWith("_")) tempMap[ele] = ele;
   });
   if (JSON.stringify(tempMap) !== JSON.stringify(data[0]))
     data.unshift(tempMap);
@@ -121,36 +121,12 @@ async function processText(resp, name, ext, contentDocumentId) {
   data += "</p>";
 
   let script = `<script>
-    const save = document.querySelector('#save');
-    save.addEventListener('click', () => {
-      save.disabled = true;
-      document.querySelector('#status').innerText = 'Hang tight! Saving data to salesforce...';
-      fetch('/saveTextData', {
-        method: 'POST',
-        //mode: 'no-cors',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            data: _editor.getData(), 
-            ext: '${ext}', 
-            name: '${name}', 
-            conDocId: '${contentDocumentId}' 
-        })
-      })
-      .then(response => {
-          document.querySelector('#status').innerText = 'Data saved';
-          console.log('The POST request is only used here for the demo purposes');
-          save.disabled = false;
-      })
-      .catch((err) => {
-          document.querySelector('#status').innerText = err.message;
-          save.disabled = false;
-      })
-    })
+    let ext = '${ext}'
+    let name = '${name}'
+    let conDocId = '${contentDocumentId}'
   </script>`;
 
-  return { template: "home", options: { data, script } };
+  return { template: "textEditor", options: { data, script } };
 }
 
 function htmlToText(data) {
@@ -170,35 +146,11 @@ async function processDoc(resp, ext, name, contentDocumentId) {
 
   const result = await mammoth.convertToHtml(buffer);
   console.log(result);
-  let template = "home";
+  let template = "docxEditor";
   let script = `<script>
-    const save = document.querySelector('#save');
-    save.addEventListener('click', () => {
-      document.querySelector('#status').innerText = 'Hang tight! Saving data to salesforce...';
-      save.disabled = true;
-      fetch('/saveDocData', {
-        method: 'POST',
-        //mode: 'no-cors',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            data: _editor.getData(), 
-            ext: '${ext}', 
-            name: '${name}', 
-            conDocId: '${contentDocumentId}' 
-        })
-      })
-      .then(response => {
-          document.querySelector('#status').innerText = 'Data saved';
-          save.disabled = false;
-          console.log('The POST request is only used here for the demo purposes');
-      })
-      .catch((err) => {
-          document.querySelector('#status').innerText = err.message;
-          save.disabled = false;
-      })
-    })
+    let ext = '${ext}'
+    let name = '${name}'
+    let conDocId = '${contentDocumentId}'
   </script>`;
   let options = { data: result.value, script };
 
