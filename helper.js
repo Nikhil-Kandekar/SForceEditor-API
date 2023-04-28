@@ -125,16 +125,6 @@ async function processText(resp, name, ext, contentDocumentId) {
   return { template: "textEditor", options: { data, script } };
 }
 
-function htmlToText(data) {
-  let _data = data.replaceAll("</p><p>", "\n\n");
-  _data = _data.replaceAll("&nbsp;<br><br>", "\n\n");
-  _data = _data.replaceAll("<br>", "\n");
-  _data = _data.replaceAll("<br/>", "\n");
-  _data = _data.replaceAll("<p>", "");
-  _data = _data.replaceAll("</p>", "");
-  return _data;
-}
-
 async function processDoc(resp, ext, name, contentDocumentId) {
   const dataBlob = await resp.blob();
   const arrBuf = await dataBlob.arrayBuffer();
@@ -200,7 +190,6 @@ module.exports = {
   urltoFile,
   processExcel,
   processText,
-  htmlToText,
   processDoc,
   processPdf,
   isNumeric,
