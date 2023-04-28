@@ -115,10 +115,6 @@ async function processExcelBlob(resp, name, ext, contentDocumentId) {
 async function processText(resp, name, ext, contentDocumentId) {
   const dataBlob = await resp.blob();
   let data = await dataBlob.text();
-  data = "<p>" + data;
-  data = data.split("\n").join("<br/>");
-  data = data.split("\r\n").join("<br />");
-  data += "</p>";
 
   let script = `<script>
     let ext = '${ext}'
@@ -127,16 +123,6 @@ async function processText(resp, name, ext, contentDocumentId) {
   </script>`;
 
   return { template: "textEditor", options: { data, script } };
-}
-
-function htmlToText(data) {
-  let _data = data.replaceAll("</p><p>", "\n\n");
-  _data = _data.replaceAll("&nbsp;<br><br>", "\n\n");
-  _data = _data.replaceAll("<br>", "\n");
-  _data = _data.replaceAll("<br/>", "\n");
-  _data = _data.replaceAll("<p>", "");
-  _data = _data.replaceAll("</p>", "");
-  return _data;
 }
 
 async function processDoc(resp, ext, name, contentDocumentId) {
@@ -204,7 +190,6 @@ module.exports = {
   urltoFile,
   processExcel,
   processText,
-  htmlToText,
   processDoc,
   processPdf,
   isNumeric,

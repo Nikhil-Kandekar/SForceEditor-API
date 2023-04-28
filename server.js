@@ -19,7 +19,6 @@ const {
   processExcel,
   processText,
   processPdf,
-  htmlToText,
   processDoc,
   getMimeTypeForExt,
   //processExcelBlob,
@@ -177,10 +176,9 @@ app.post("/saveSheetData", express.raw({ type: "*/*" }), async (req, res) => {
 
 app.post("/saveTextData", async (req, res) => {
   let data = req.body.data;
-  let textData = htmlToText(data);
   let { ext, name, conDocId } = req.body;
   try {
-    await insertVersionData(req, res, textData, name, conDocId);
+    await insertVersionData(req, res, data, name, conDocId);
     res.send(req.body);
   } catch (error) {
     console.log(err);

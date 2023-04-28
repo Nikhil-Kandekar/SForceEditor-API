@@ -157,3 +157,40 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+.iconBtn {
+  border: none;
+  background-color: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  border: none;
+  background-color: transparent;
+  opacity: 0.7;
+}
+
+.tool_holder {
+  background-color: #181818;
+  border-radius: 5px;
+  color: white;
+  padding: 5px;
+}
+
+.popup {
+  position: absolute;
+  z-index: 1;
+  /* left: 0;
+  top: 0; */
+  margin: auto;
+  /* width: 650px; */
+  /* height: 230px; */
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: none;
+}
+
+.show {
+  display: block;
+}
