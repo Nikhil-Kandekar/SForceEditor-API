@@ -19,7 +19,6 @@ const {
   processExcel,
   processText,
   processPdf,
-  htmlToText,
   processDoc,
   getMimeTypeForExt,
   //processExcelBlob,
@@ -129,13 +128,20 @@ app.get("/getData", async (req, res) => {
       renderOptions = options;
     } else {
       res.render("error", {
-        message: `Files of type .${ext} are not supported.`,
+        script: `<script>
+        setAlert('Files of type .${ext} are not supported.', 'danger');
+        const save = document.querySelector('#save-custom');
+        const saveAndClose = document.querySelector('#saveAndClose-custom');
+        save.disabled = true;
+        saveAndClose.disabled = true;
+        </script>`,
       });
       return;
     }
     res.render(renderTemplate, renderOptions);
   } catch (error) {
     console.log(error);
+    res.statusCode = 501;
     res.json({ error: error.message });
   }
 });
@@ -149,8 +155,13 @@ app.post("/saveXlsx", async (req, res) => {
   utils.book_append_sheet(wb, ws, "Sheet1");
   const buf = write(wb, { type: "buffer", bookType: ext });
   console.log(buf);
-  await insertVersionData(req, res, buf, name, conDocId);
-  res.send(req.body);
+  try {
+    await insertVersionData(req, res, buf, name, conDocId);
+    res.send(req.body);
+  } catch (error) {
+    console.log(err);
+    res.status(500).send({ error: err.message });
+  }
 });
 
 app.post("/saveSheetData", express.raw({ type: "*/*" }), async (req, res) => {
@@ -165,14 +176,13 @@ app.post("/saveSheetData", express.raw({ type: "*/*" }), async (req, res) => {
 
 app.post("/saveTextData", async (req, res) => {
   let data = req.body.data;
-  let textData = htmlToText(data);
   let { ext, name, conDocId } = req.body;
   try {
-    await insertVersionData(req, res, textData, name, conDocId);
+    await insertVersionData(req, res, data, name, conDocId);
     res.send(req.body);
   } catch (error) {
     console.log(err);
-    res.status(404).send({ error: err.message });
+    res.status(500).send({ error: err.message });
   }
 });
 
@@ -187,14 +197,14 @@ app.post("/saveDocData", async (req, res) => {
   let blob = new Blob(["\ufeff", htmltodocxResult], {
     type: mimeType,
   });
-  let arrBuf = await blob.arrayBuffer();
-  let buf = Buffer.from(arrBuf);
   try {
+    let arrBuf = await blob.arrayBuffer();
+    let buf = Buffer.from(arrBuf);
     await insertVersionData(req, res, buf, name, conDocId);
     res.send(req.body);
   } catch (err) {
     console.log(err);
-    res.status(404).send({ error: err.message });
+    res.status(500).send({ error: err.message });
   }
 });
 

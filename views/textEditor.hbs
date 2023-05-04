@@ -1,146 +1,44 @@
-<div id="editor" style="box-shadow: 10px 5px 5px red;">
-    {{{data}}}
+<div>
+  <div class="d-flex mb-1 tool_holder">
+    <img class="iconBtn" src="Icon_selectAll.svg" alt="" onclick="selectall()"> <span class="mx-1"> | </span>
+    <img class="iconBtn" src="Icon_findAndReplace.svg" alt="" onclick="showFandR()"> <span class="mx-1"> | </span>
+    <img class="iconBtn" src="Icon_Undo.svg" alt="" onclick="Undo()" id="undo">
+    <img class="iconBtn" src="Icon_Redo.svg" alt="" onclick="Redo()" id="redo">
+    <div class="popup p-3" id="findAndReplace">
+      <div class="row">
+        <label class="col-sm-2 col-form-label" for="termSearch">Find</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="text" id="termSearch" name="termSearch" placeholder="Search..."/><br/>
+        </div>
+        <label class="col-sm-2 col-form-label" for="termReplace">Replace</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="text" id="termReplace" name="termReplace" placeholder="Replace..."/><br/>
+        </div>
+      </div>
+      <div>
+        <input class="form-check-input" type="checkbox" value="" name="caseSensitive" id="caseSensitive">
+        <label for="caseSensitive">Case Sensitive</label>
+      </div>
+      <button class="btn btn-info" onclick="SAR.find(); return false;" id="find">Find</button>
+      <button class="btn btn-info" onclick="SAR.findAndReplace(); return false;" id="findAndReplace">Find/Replace</button>
+      <button class="btn btn-info" onclick="SAR.replaceAll(); return false;" id="replaceAll">Replace All</button>
+      <button class="btn btn-danger" onclick="closeFandR()">Close</button>
+    </div>
+  </div>
+  <textarea class="form-control" id="textArea" rows="20" onchange="handleTextAreaChange()" placeholder="Welcome to SForce Editor">{{data}}</textarea>
 </div>
 {{{script}}}
 <script>
-    let _editor;
-    CKEDITOR.ClassicEditor.create(document.getElementById("editor"), {
-      // https://ckeditor.com/docs/ckeditor5/latest/features/toolbar/toolbar.html#extended-toolbar-configuration-format
-      toolbar: {
-          items: [
-              'findAndReplace', 'selectAll', '|',
-              'undo', 'redo',
-          ],
-          shouldNotGroupWhenFull: true
-      },
-      // Changing the language of the interface requires loading the language file using the <script> tag.
-      // language: 'es',
-      list: {
-          properties: {
-              styles: true,
-              startIndex: true,
-              reversed: true
-          }
-      },
-      // https://ckeditor.com/docs/ckeditor5/latest/features/headings.html#configuration
-      heading: {
-          options: [
-              { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
-              { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
-              { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
-              { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
-              { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
-              { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
-              { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' }
-          ]
-      },
-      // https://ckeditor.com/docs/ckeditor5/latest/features/editor-placeholder.html#using-the-editor-configuration
-      placeholder: 'Welcome to SForce Editor!',
-      // https://ckeditor.com/docs/ckeditor5/latest/features/font.html#configuring-the-font-family-feature
-      fontFamily: {
-          options: [
-              'default',
-              'Arial, Helvetica, sans-serif',
-              'Courier New, Courier, monospace',
-              'Georgia, serif',
-              'Lucida Sans Unicode, Lucida Grande, sans-serif',
-              'Tahoma, Geneva, sans-serif',
-              'Times New Roman, Times, serif',
-              'Trebuchet MS, Helvetica, sans-serif',
-              'Verdana, Geneva, sans-serif'
-          ],
-          supportAllValues: true
-      },
-      // https://ckeditor.com/docs/ckeditor5/latest/features/font.html#configuring-the-font-size-feature
-      fontSize: {
-          options: [ 10, 12, 14, 'default', 18, 20, 22 ],
-          supportAllValues: true
-      },
-      // Be careful with the setting below. It instructs CKEditor to accept ALL HTML markup.
-      // https://ckeditor.com/docs/ckeditor5/latest/features/general-html-support.html#enabling-all-html-features
-      htmlSupport: {
-          allow: [
-              {
-                  name: /.*/,
-                  attributes: true,
-                  classes: true,
-                  styles: true
-              }
-          ]
-      },
-      // Be careful with enabling previews
-      // https://ckeditor.com/docs/ckeditor5/latest/features/html-embed.html#content-previews
-      htmlEmbed: {
-          showPreviews: true
-      },
-      // https://ckeditor.com/docs/ckeditor5/latest/features/link.html#custom-link-attributes-decorators
-      link: {
-          decorators: {
-              addTargetToExternalLinks: true,
-              defaultProtocol: 'https://',
-              toggleDownloadable: {
-                  mode: 'manual',
-                  label: 'Downloadable',
-                  attributes: {
-                      download: 'file'
-                  }
-              }
-          }
-      },
-      // https://ckeditor.com/docs/ckeditor5/latest/features/mentions.html#configuration
-      mention: {
-          feeds: [
-              {
-                  marker: '@',
-                  feed: [
-                      '@apple', '@bears', '@brownie', '@cake', '@cake', '@candy', '@canes', '@chocolate', '@cookie', '@cotton', '@cream',
-                      '@cupcake', '@danish', '@donut', '@dragée', '@fruitcake', '@gingerbread', '@gummi', '@ice', '@jelly-o',
-                      '@liquorice', '@macaroon', '@marzipan', '@oat', '@pie', '@plum', '@pudding', '@sesame', '@snaps', '@soufflé',
-                      '@sugar', '@sweet', '@topping', '@wafer'
-                  ],
-                  minimumCharacters: 1
-              }
-          ]
-      },
-      // The "super-build" contains more premium features that require additional configuration, disable them below.
-      // Do not turn them on unless you read the documentation and know how to configure them and setup the editor.
-      removePlugins: [
-          // These two are commercial, but you can try them out without registering to a trial.
-          // 'ExportPdf',
-          // 'ExportWord',
-          'CKBox',
-          'CKFinder',
-          'EasyImage',
-          // This sample uses the Base64UploadAdapter to handle image uploads as it requires no configuration.
-          // https://ckeditor.com/docs/ckeditor5/latest/features/images/image-upload/base64-upload-adapter.html
-          // Storing images as Base64 is usually a very bad idea.
-          // Replace it on production website with other solutions:
-          // https://ckeditor.com/docs/ckeditor5/latest/features/images/image-upload/image-upload.html
-          // 'Base64UploadAdapter',
-          'RealTimeCollaborativeComments',
-          'RealTimeCollaborativeTrackChanges',
-          'RealTimeCollaborativeRevisionHistory',
-          'PresenceList',
-          'Comments',
-          'TrackChanges',
-          'TrackChangesData',
-          'RevisionHistory',
-          'Pagination',
-          'WProofreader',
-          // Careful, with the Mathtype plugin CKEditor will not load when loading this sample
-          // from a local file system (file://) - load this site via HTTP server if you enable MathType
-          'MathType'
-      ]
-  })
-    .then(editor => {_editor = editor})
-    .catch(err => setAlert(err.message));
-
+    function showCon() {console.log(document.querySelector('#textArea').value)}
     const save = document.querySelector('#save-custom');
     const saveAndClose = document.querySelector('#saveAndClose-custom');
-    save.addEventListener('click', () => {
+    const textArea = document.querySelector('#textArea');
+    save.addEventListener('click', (event) => {
+      event.preventDefault();
       const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
       save.disabled = true;
       saveAndClose.disabled = true;
+      const data = textArea.value;
       fetch('/saveTextData', {
         method: 'POST',
         //mode: 'no-cors',
@@ -148,7 +46,7 @@
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-            data: _editor.getData(), 
+            data, 
             ext, 
             name, 
             conDocId 
@@ -168,10 +66,12 @@
       })
     })
 
-    saveAndClose.addEventListener('click', () => {
+    saveAndClose.addEventListener('click', (event) => {
+      event.preventDefault();
       const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
       save.disabled = true;
       saveAndClose.disabled = true;
+      const data = textArea.value;
       fetch('/saveTextData', {
         method: 'POST',
         //mode: 'no-cors',
@@ -179,7 +79,7 @@
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-            data: _editor.getData(), 
+            data,
             ext, 
             name, 
             conDocId 
@@ -190,6 +90,7 @@
           setAlert('Data saved', 'success');
           save.disabled = false;
           saveAndClose.disabled = false;
+          window.close();
       })
       .catch((err) => {
           closeHang.click();
@@ -198,5 +99,201 @@
           saveAndClose.disabled = false;
       })
     })
+
+    function selectall() {
+      var area_id = 'textArea';
+      var sharp_id = "#" + area_id;
+      var textarea = document.getElementById(area_id);
+        var iStart = 0;
+        var iLength = $(sharp_id).val().length;
+        if (textarea.createTextRange)
+        {
+            var xRange = textarea.createTextRange();
+            xRange.moveStart("character", iStart);
+            xRange.moveEnd("character", iLength);
+            xRange.select();
+        } else if (textarea.setSelectionRange)
+        {
+            textarea.setSelectionRange(iStart, iLength);
+        }
+        $(sharp_id).focus();
+    }
 </script>
 
+<script type="text/javascript">
+    var SAR = {};
+
+    SAR.find = function(){
+        // collect variables
+        var txt = $("#textArea").val();
+        var strSearchTerm = $("#termSearch").val();
+        var isCaseSensitive = ($("#caseSensitive").attr('checked') == 'checked') ? true : false;
+
+        // make text lowercase if search is supposed to be case insensitive
+        if(isCaseSensitive == false){
+            txt = txt.toLowerCase();
+            strSearchTerm = strSearchTerm.toLowerCase();
+        }
+
+        // find next index of searchterm, starting from current cursor position
+        var cursorPos = ($("#textArea").getCursorPosEnd());
+        var termPos = txt.indexOf(strSearchTerm, cursorPos);
+
+        // if found, select it
+        if(termPos != -1){
+            $("#textArea").selectRange(termPos, termPos+strSearchTerm.length);
+        }else{
+            // not found from cursor pos, so start from beginning
+            termPos = txt.indexOf(strSearchTerm);
+            if(termPos != -1){
+                $("#textArea").selectRange(termPos, termPos+strSearchTerm.length);
+            }else{
+                alert("not found");
+            }
+        }
+    };
+
+    SAR.findAndReplace = function(){
+        // collect variables
+        var origTxt = $("#textArea").val(); // needed for text replacement
+        var txt = $("#textArea").val(); // duplicate needed for case insensitive search
+        var strSearchTerm = $("#termSearch").val();
+        var strReplaceWith = $("#termReplace").val();
+        var isCaseSensitive = ($("#caseSensitive").attr('checked') == 'checked') ? true : false;
+        var termPos;
+
+        // make text lowercase if search is supposed to be case insensitive
+        if(isCaseSensitive == false){
+            txt = txt.toLowerCase();
+            strSearchTerm = strSearchTerm.toLowerCase();
+        }
+
+        // find next index of searchterm, starting from current cursor position
+        var cursorPos = ($("#textArea").getCursorPosEnd());
+        var termPos = txt.indexOf(strSearchTerm, cursorPos);
+        var newText = '';
+
+        // if found, replace it, then select it
+        if(termPos != -1){
+            newText = origTxt.substring(0, termPos) + strReplaceWith + origTxt.substring(termPos+strSearchTerm.length, origTxt.length)
+            $("#textArea").val(newText);
+            $("#textArea").selectRange(termPos, termPos+strReplaceWith.length);
+        }else{
+            // not found from cursor pos, so start from beginning
+            termPos = txt.indexOf(strSearchTerm);
+            if(termPos != -1){
+                newText = origTxt.substring(0, termPos) + strReplaceWith + origTxt.substring(termPos+strSearchTerm.length, origTxt.length)
+                $("#textArea").val(newText);
+                $("#textArea").selectRange(termPos, termPos+strReplaceWith.length);
+            }else{
+                alert("not found");
+            }
+        }
+    };
+
+    SAR.replaceAll = function(){
+        // collect variables
+        var origTxt = $("#textArea").val(); // needed for text replacement
+        var txt = $("#textArea").val(); // duplicate needed for case insensitive search
+        var strSearchTerm = $("#termSearch").val();
+        var strReplaceWith = $("#termReplace").val();
+        var isCaseSensitive = ($("#caseSensitive").attr('checked') == 'checked') ? true : false;
+
+        // make text lowercase if search is supposed to be case insensitive
+        if(isCaseSensitive == false){
+            txt = txt.toLowerCase();
+            strSearchTerm = strSearchTerm.toLowerCase();
+        }
+
+        // find all occurances of search string
+        var matches = [];
+        var pos = txt.indexOf(strSearchTerm);
+        while(pos > -1) {
+            matches.push(pos);
+            pos = txt.indexOf(strSearchTerm, pos+1);
+        }
+
+        for (var match in matches){
+            SAR.findAndReplace();
+        }
+    };
+
+
+    /* TWO UTILITY FUNCTIONS YOU WILL NEED */
+    $.fn.selectRange = function(start, end) {
+        return this.each(function() {
+            if(this.setSelectionRange) {
+                this.focus();
+                this.setSelectionRange(start, end);
+            } else if(this.createTextRange) {
+                var range = this.createTextRange();
+                range.collapse(true);
+                range.moveEnd('character', end);
+                range.moveStart('character', start);
+                range.select();
+            }
+        });
+    };
+
+    $.fn.getCursorPosEnd = function() {
+        var pos = 0;
+        var input = this.get(0);
+        // IE Support
+        if (document.selection) {
+            input.focus();
+            var sel = document.selection.createRange();
+            pos = sel.text.length;
+        }
+        // Firefox support
+        else if (input.selectionStart || input.selectionStart == '0')
+            pos = input.selectionEnd;
+        return pos;
+    };  
+</script>
+
+<script>
+  function handleTextAreaChange(event) {
+    document.querySelector('#textArea').defaultValue = document.querySelector('#textArea').value;
+  }
+  const myPopup = document.querySelector('#findAndReplace');
+  function showFandR() {
+      myPopup.classList.add("show");
+  };
+  function closeFandR() {
+      myPopup.classList.remove("show");
+  };
+  window.addEventListener("click", function (event) {
+    if (event.target === myPopup) {
+      myPopup.classList.remove("show");
+    }
+  });
+</script>
+
+<script>
+  const txtHistory = new UndoRedojs(5);
+  const textarea = document.querySelector("#textArea");
+  textarea.addEventListener('input', () => {
+    if (txtHistory.current() !== textarea.value) {
+      if ((textarea.value.length - txtHistory.current().length) > 1 || (textarea.value.length - txtHistory.current().length) < -1 || (textarea.value.length - txtHistory.current().length) === 0) {
+        txtHistory.record(textarea.value, true);
+      } else {
+        txtHistory.record(textarea.value);
+      }
+      undoBtn.disabled = false
+    }
+  });
+
+  function Undo() {
+    if (txtHistory.undo(true) !== undefined) {
+      textarea.value = txtHistory.undo();
+      textarea.defaultValue = txtHistory.undo();
+    }
+  }
+
+  function Redo() {
+    if (txtHistory.redo(true) !== undefined) {
+      textarea.value = txtHistory.redo();
+      textarea.defaultValue = txtHistory.redo();
+    }
+  }
+</script>
