@@ -158,34 +158,17 @@ async function processDoc(resp, ext, name, contentDocumentId) {
 }
 
 async function processPdf(resp, ext, name, contentDocumentId) {
-  const dataBlob = await resp.blob();
-  const arrBuf = await dataBlob.arrayBuffer();
-  let pdfBuffer = Buffer.from(arrBuf);
-  // console.log("pdf buf -> " + pdfBuffer);
-  pdfConClient.convertRawDataToFile(
-    pdfBuffer,
-    "data.html",
-    async function (err, fileName) {
-      if (err) return console.error("Pdfcrowd Error: " + err);
-      console.log("Success: the file was created " + fileName);
-    }
-  );
-  let data = await fs.readFile("data.html", { encoding: "utf8" });
-  // let startIdx = data.indexOf("<body>");
-  // let endIdx = data.indexOf("</body>");
-  // data = data.slice(startIdx, endIdx);
-  // data = data.replace("<body>", "");
-  // data = data.replace("</body>", "");
-  // startIdx = data.indexOf("<img");
-  // endIdx = data.indexOf('CC">');
-  // let imgEle = data.slice(startIdx, endIdx);
-  // data = data.replace('CC">', "");
-  // data = data.replace(imgEle, "");
-  // data = data.replace("<div", "<p");
-  // data = data.replace("</div", "</p");
-  console.log("html -> " + data);
-  let template = "pdfDisplay";
-  let options = { data, script: "" };
+  
+  const buffer = await resp.arrayBuffer();
+  const base64String = Buffer.from(buffer).toString('base64');
+  // console.log(base64String);
+  let script = `
+    const base64String = '${base64String}';
+    console.log(base64String);
+  `;
+
+  let template = "pdf-canvas";
+  let options ={script}
   return { template, options };
 }
 
