@@ -208,6 +208,18 @@ app.post("/saveDocData", async (req, res) => {
   }
 });
 
+app.post("/savePdfData", async (req, res) => {
+  let data = req.body.data;
+  let { ext, name, conDocId } = req.body;
+  try {
+    await insertVersionData(req, res, data, name, conDocId);
+    res.send(req.body);
+  } catch (error) {
+    console.log(err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });

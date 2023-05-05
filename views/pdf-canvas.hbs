@@ -1,10 +1,10 @@
 <div class="toolbar">
 	<div class="tool"> 
-		<span>PDF Verse</span>
+		<span>SForce Editor</span>
 	</div>
 	<div class="tool">
 		<label for="">Brush size</label>
-		<input type="number" class="form-control text-right" value="1" id="brush-size" max="50">
+		<input type="number" class="form-control text-right" value="10" id="brush-size" max="50">
 	</div>
 	<div class="tool">
 		<label for="">Font size</label>
@@ -53,10 +53,10 @@
 		<button class="btn btn-danger btn-sm" onclick="clearPage()">Clear Page</button>
 	</div>
 	<div class="tool">
-		<button class="btn btn-info btn-sm" onclick="showPdfData()">{}</button>
+		<button id='save-custom' class="btn btn-success btn-sm" onclick="savePDF()"><i class="fa fa-save"></i> Save</button>
 	</div>
-	<div class="tool">
-		<button class="btn btn-light btn-sm" onclick="savePDF()"><i class="fa fa-save"></i> Save</button>
+    <div class="tool">
+		<button id='saveAndClose-custom'  class="btn btn-info btn-sm" onclick="saveandclosePDF()"><i class="fa fa-save"></i> Save and Close</button>
 	</div>
 </div>
 <div id="pdf-container"></div>
@@ -74,6 +74,12 @@
     {{{script}}}
 </script>
 <script>
+    const navi_remove = document.getElementsByTagName('nav')[0];
+    navi_remove.remove();
+
+    
+ //////////////////////////////////////////////////////////////////////////////
+
     fabric.LineArrow = fabric.util.createClass(fabric.Line, {
 
         type: 'lineArrow',
@@ -440,7 +446,8 @@
                 : undefined
             );
             if (index === inst.fabricObjects.length - 1) {
-                doc.save(fileName);
+                const ArrayBuffdata = doc.output('arraybuffer',{fileName:name});
+                console.log(ArrayBuffdata);
             }
         })
     }
@@ -502,7 +509,7 @@
     }
 </script>
 <script>
-    console.log(base64String)
+    //console.log(base64String)
 	var pdf = new PDFAnnotate("pdf-container", `${base64String}`, {
   onPageUpdated(page, oldData, newData) {
     console.log(page, oldData, newData);
@@ -564,10 +571,17 @@ function deleteSelectedObject(event) {
   pdf.deleteSelectedObject();
 }
 
+
 function savePDF() {
     // pdf.savePdf();
     pdf.savePdf('sample.pdf'); // save with given file name
 }
+
+function saveandclosePDF(){
+    savePDF()
+    window.close()
+}
+
 
 function clearPage() {
     pdf.clearActivePage();
@@ -599,4 +613,83 @@ $(function () {
     });
 });
 
+/*
+    const save = document.querySelector('#save-custom');
+    const saveAndClose = document.querySelector('#saveAndClose-custom');
+    save.addEventListener('click', (event) => {
+      event.preventDefault();
+      pdf.savePdf();
+      const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
+      save.disabled = true;
+      saveAndClose.disabled = true;
+      //const jsPdfinst= new jsPDF();
+      //const savingcanvas = 
+
+      //const data = pdf.output({type:'arraybuffer'});
+      //console.log(data);
+      
+      fetch('/savePdfData', {
+        method: 'POST',
+        //mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            data, 
+            ext, 
+            name, 
+            conDocId 
+        })
+      })
+      .then(response => {
+          closeHang.click();
+          setAlert('Data saved', 'success');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+      })
+      .catch((err) => {
+          closeHang.click();
+          setAlert(err.message, 'danger');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+      })
+      
+    })
+
+    
+    saveAndClose.addEventListener('click', (event) => {
+      event.preventDefault();
+      const closeHang = setAlert(`<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> Hang tight, saving data to Salesforce...`, 'warning');
+      save.disabled = true;
+      saveAndClose.disabled = true;
+      const data = pdf.output('arrayBuffer');
+      console.log(data);
+      fetch('/savePdfData', {
+        method: 'POST',
+        //mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            data,
+            ext, 
+            name, 
+            conDocId 
+        })
+      })
+      .then(response => {
+          closeHang.click();
+          setAlert('Data saved', 'success');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+          window.close();
+      })
+      .catch((err) => {
+          closeHang.click();
+          setAlert(err.message, 'danger');
+          save.disabled = false;
+          saveAndClose.disabled = false;
+      })
+    })
+*/
 </script>

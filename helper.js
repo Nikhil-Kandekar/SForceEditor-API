@@ -150,7 +150,10 @@ async function processPdf(resp, ext, name, contentDocumentId) {
   // console.log(base64String);
   let script = `
     const base64String = '${base64String}';
-    console.log(base64String);
+    // console.log(base64String);
+    let ext = '${ext}'
+    let name = '${name}'
+    let conDocId = '${contentDocumentId}'
   `;
 
   let template = "pdf-canvas";
